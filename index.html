@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#009b4d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>ULTRA@503 – Rework / Rejection</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <img src="ultra-logo.png" class="logo" alt="ULTRA Corpotech">
+  <div><div class="brand">ULTRA@503</div><div class="subtitle">Internal Rework / Rejection Notification</div></div>
+  <span class="status" id="onlineStatus">ONLINE</span>
+</header>
+
+<main class="container">
+<section class="panel">
+  <div class="section-head"><h2>1. Route Card</h2><span class="badge">QR + Manual Entry</span></div>
+  <div class="actions">
+    <button class="primary" id="scanBtn">▣ Scan Route Card QR</button>
+  </div>
+  <div id="mobileNotice" class="mobile-notice hidden"></div>
+  <div id="scanner" class="scanner hidden">
+    <video id="video" playsinline autoplay muted></video>
+    <canvas id="scanCanvas" hidden></canvas>
+    <div class="scan-overlay"><div class="scan-frame"></div><div class="scan-hint">Place QR inside the frame</div></div>
+    <button class="danger" id="stopScan">Stop Scanner</button>
+    <div id="scanMsg" class="hint">Camera starts only after permission is granted.</div>
+  </div>
+  <div class="manual-tools">
+    <textarea id="qrText" placeholder="Paste decoded QR text here, or enter the exact Route Card QR payload."></textarea>
+    <button class="secondary" id="parseBtn">Read QR Data</button>
+  </div>
+
+  <div class="grid route-grid">
+    <label>Plant<input id="plant" value="0503"></label>
+    <label>Part Number<input id="partNo" placeholder="e.g. H0C2197700"></label>
+    <label>Drawing / Revision<input id="drawingRev" placeholder="e.g. C21-977-00.1 REV 1"></label>
+    <label>Part Description<input id="description" placeholder="e.g. THDD B/U RG BMS-A606"></label>
+    <label>Customer PO No.<input id="poNo" placeholder="e.g. 4513617546"></label>
+    <label>PO Line No.<input id="poLine" placeholder="e.g. 00030"></label>
+    <label>PO Qty<input id="poQty" type="number" step="0.001" placeholder="8.000"></label>
+    <label>Heat No. / HT Lot No.<input id="heatNo" placeholder="e.g. K24-197/"></label>
+    <label>UC Batch No. & Job Serial No.<input id="ucBatch" placeholder="e.g. UC26F01917 001 to 008"></label>
+    <label>UC Batch Qty<input id="batchQty" type="number" step="0.001" placeholder="8.000"></label>
+    <label>Total Qty<input id="totalQty" type="number" step="0.001" placeholder="8.000"></label>
+    <label>Unit<input id="unit" value="NOS"></label>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-head"><h2>2. Notification</h2><span class="notif" id="notificationNo">QN-—-—</span></div>
+  <div class="grid two">
+    <label>Customer Name
+      <select id="customer">
+        <option value="">Select customer</option>
+        <option>Baker Hughes</option><option>WIS</option><option>Weatherford</option>
+        <option>Halliburton</option><option>OTC</option><option>Interunit</option>
+        <option>Mainspring</option><option>Other</option>
+      </select>
+    </label>
+    <label>Responsible Section (select one or more)
+      <select id="section" multiple size="4" aria-label="Responsible Section">
+        <option>Raw Material</option><option>Small CNC</option><option>Big CNC</option>
+        <option>VMC</option><option>HMC</option><option>WFL</option>
+        <option>Grinding</option><option>Fitting</option>
+      </select>
+      <small class="field-help">Hold Ctrl (PC) or use the phone multi-select controls to select multiple sections.</small>
+    </label>
+  </div>
+
+  <div class="qty-grid">
+    <div class="qty-card rework"><span>REWORK QTY</span><input id="reworkQty" type="number" min="0" step="0.001" value="0"></div>
+    <div class="qty-card reject"><span>REJECT QTY</span><input id="rejectQty" type="number" min="0" step="0.001" value="0"></div>
+  </div>
+  <div class="grid two">
+    <label>Rework Issue / Remark <textarea id="reworkRemark" placeholder="Required when Rework Qty is greater than 0"></textarea></label>
+    <label>Reject Issue / Remark <textarea id="rejectRemark" placeholder="Required when Reject Qty is greater than 0"></textarea></label>
+  </div>
+  <label>General Non-Conformance / Issue<textarea id="generalIssue" placeholder="Describe the non-conformance"></textarea></label>
+  <div class="grid two signoff-grid">
+    <label>NC Confirm by<input id="ncConfirmBy" placeholder="Name / Employee ID"></label>
+    <label>Verify by<input id="verifyBy" placeholder="Name / Employee ID"></label>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-head"><h2>3. Photographs</h2><span class="badge" id="photoCount">0 photos</span></div>
+  <div class="actions">
+    <button class="primary" id="takePhoto">📷 Take Photo</button>
+    <button class="secondary" id="addPhoto">＋ Add Photo</button>
+    <input id="galleryInput" type="file" accept="image/*" multiple hidden>
+  </div>
+  <div id="photoGrid" class="photo-grid"></div>
+</section>
+
+<section class="panel">
+  <div class="section-head"><h2>4. PDF & Sharing</h2></div>
+  <div class="actions big-actions">
+    <button class="secondary" id="newEntry">＋ Create New Entry</button>
+    <button class="primary" id="createPdf">Create PDF</button>
+    <button class="secondary" id="downloadPdf" disabled>Download PDF</button>
+    <button class="secondary" id="sharePdf" disabled>Share PDF</button>
+  </div>
+  <div id="pdfStatus" class="status-box">No PDF created yet.</div>
+</section>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<!-- Native-style photo capture modal using getUserMedia -->
+<div id="photoModal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Take Photo</h2>
+    <video id="photoVideo" playsinline autoplay muted></video>
+    <canvas id="photoCanvas" hidden></canvas>
+    <div class="actions"><button class="primary" id="capturePhoto">Capture</button><button class="secondary" id="closePhoto">Cancel</button></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
